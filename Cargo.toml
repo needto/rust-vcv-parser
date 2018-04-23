@@ -1,0 +1,11 @@
+[package]
+name = "vcv_parser"
+version = "0.1.0"
+authors = ["Alexander Biriukov <needto@gmail.com>"]
+
+[dependencies]
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+prettytable-rs = "^0.6"
+reqwest = "*"
