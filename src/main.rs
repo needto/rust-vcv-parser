@@ -77,9 +77,18 @@ fn process_module_statistics(modules: Vec<VcvPatchModule>, module_stats: &mut Mo
 
 fn print_statistics(statistics: &HashMap<String,ModuleStatistic>) {
     let mut table = Table::new();
+    let mut statistics_vec: Vec<&ModuleStatistic> = Vec::new();
+
     for (_key, value) in statistics {
+        statistics_vec.push(value);
+    }
+
+    statistics_vec.sort_by(|a,b| b.count.cmp(&a.count));
+
+    for value in statistics_vec {
         table.add_row(row![FdBybl->value.plugin, Fy->value.model, Fy->value.count]);
     }
+
     table.printstd();
 }
 
