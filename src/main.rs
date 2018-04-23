@@ -28,6 +28,22 @@ impl ModuleStatistic {
     }
 }
 
+type ModuleStats = HashMap<String,ModuleStatistic>;
+
+trait CountModule {
+    fn count_module(&mut self, plugin: String, model: String);
+}
+
+impl CountModule for ModuleStats{
+    fn count_module(&mut self, plugin: String, model: String) {
+        let module_name = format!("{}{}", plugin, model);
+        let module_plugin = plugin;
+        let module_model = model;
+        let module_statistic = self.entry(module_name).or_insert(ModuleStatistic::new(module_plugin, module_model));
+        module_statistic.count += 1;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct VcvPatchModule {
   plugin: String,
@@ -47,23 +63,15 @@ fn get_modules(s: String) -> Vec<VcvPatchModule> {
     return vcv_patch.modules;
 }
 
-fn process_module_statistics(modules: Vec<VcvPatchModule>, module_stats: &mut HashMap<String,ModuleStatistic>) {
-    let mut current_module_stats = HashMap::new();
+fn process_module_statistics(modules: Vec<VcvPatchModule>, module_stats: &mut ModuleStats) {
+    let mut current_module_stats: ModuleStats = HashMap::new();
 
     for module in modules {
-        let module_name = format!("{}{}", module.plugin, module.model);
-        let module_plugin = module.plugin;
-        let module_model = module.model;
-        let module_statistic = current_module_stats.entry(module_name).or_insert(ModuleStatistic::new(module_plugin, module_model));
-        module_statistic.count += 1;
+        current_module_stats.count_module(module.plugin, module.model);
     }
 
-    for (_key, value) in current_module_stats {
-        let module_name = format!("{}{}", value.plugin, value.model);
-        let module_plugin = value.plugin;
-        let module_model = value.model;
-        let module_statistic = module_stats.entry(module_name).or_insert(ModuleStatistic::new(module_plugin, module_model));
-        module_statistic.count += 1;
+    for (_key, module) in current_module_stats {
+        module_stats.count_module(module.plugin, module.model);
     }
 }
 
