@@ -2,7 +2,7 @@ extern crate serde_json;
 use serde_json::{Value};
 extern crate reqwest;
 
-static URL: &'static str = "https://patchstorage.com/api/wp/v2/patches?per_page=10&categories=378";
+static URL: &'static str = "https://patchstorage.com/api/wp/v2/patches?per_page=100&categories=378";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MediaInfo {

@@ -4,6 +4,7 @@ extern crate prettytable;
 extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
+extern crate threadpool;
 
 mod patchstorage;
 use patchstorage::{get_patch_list, get_patch_contents};
@@ -12,12 +13,11 @@ mod vcv;
 use vcv::{get_modules, process_module_statistics, ModuleStatistic};
 
 use prettytable::Table;
+use threadpool::ThreadPool;
+use std::sync::mpsc::channel;
 use std::collections::HashMap;
 
-    for (_key, module) in current_module_stats {
-        module_stats.count_module(module.plugin, module.model);
-    }
-}
+static NUM_THREADS:usize = 16;
 
 fn print_statistics(statistics: &HashMap<String,ModuleStatistic>) {
     let mut table = Table::new();
@@ -39,16 +39,33 @@ fn print_statistics(statistics: &HashMap<String,ModuleStatistic>) {
 fn main() {
     let urls = get_patch_list();
     let mut module_stats = HashMap::new();
-    for url in urls {
-        println!("Getting patch contents from: {:?}", url);
-        match get_patch_contents(url) {
-            Some(patch) => {
-                let modules = get_modules(patch);
-                process_module_statistics(modules, &mut module_stats);
-            },
-            None => println!("Could not retrieve VCVRack patch")
-        }
 
+    let pool = ThreadPool::new(NUM_THREADS);
+    let (sender, receiver) = channel();
+
+    for url in urls.clone() {
+        let sender = sender.clone();
+        pool.execute(move || {
+            println!("Getting patch contents from: {:?}", url);
+            match get_patch_contents(url) {
+                Some(patch) => {
+                    let modules = get_modules(patch);
+                    sender.send(Some(modules)).unwrap();
+                },
+                None => {
+                    println!("Could not retrieve VCVRack patch");
+                    sender.send(None).unwrap();
+                }
+            }
+        });
+    }
+
+    pool.join();
+    for _url in urls {
+        match receiver.recv().unwrap() {
+            Some(modules) => process_module_statistics(modules, &mut module_stats),
+            None => ()
+        }
     }
     print_statistics(&module_stats);
 }
