@@ -8,68 +8,11 @@ extern crate serde_json;
 mod patchstorage;
 use patchstorage::{get_patch_list, get_patch_contents};
 
-use std::collections::HashMap;
+mod vcv;
+use vcv::{get_modules, process_module_statistics, ModuleStatistic};
+
 use prettytable::Table;
-
-#[derive(Debug)]
-pub struct ModuleStatistic {
-    plugin: String,
-    model: String,
-    count: u32
-}
-
-impl ModuleStatistic {
-    pub fn new(plugin: String, model: String) -> ModuleStatistic {
-        ModuleStatistic {
-            plugin: plugin,
-            model: model,
-            count: 0
-        }
-    }
-}
-
-type ModuleStats = HashMap<String,ModuleStatistic>;
-
-trait CountModule {
-    fn count_module(&mut self, plugin: String, model: String);
-}
-
-impl CountModule for ModuleStats{
-    fn count_module(&mut self, plugin: String, model: String) {
-        let module_name = format!("{}{}", plugin, model);
-        let module_plugin = plugin;
-        let module_model = model;
-        let module_statistic = self.entry(module_name).or_insert(ModuleStatistic::new(module_plugin, module_model));
-        module_statistic.count += 1;
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct VcvPatchModule {
-  plugin: String,
-  #[serde(default)]
-  version: Option<String>,
-  model: String
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct VcvPatch {
-  version: String,
-  modules: Vec<VcvPatchModule>
-}
-
-
-fn get_modules(s: String) -> Vec<VcvPatchModule> {
-    let vcv_patch: VcvPatch = serde_json::from_str(&s).unwrap();
-    return vcv_patch.modules;
-}
-
-fn process_module_statistics(modules: Vec<VcvPatchModule>, module_stats: &mut ModuleStats) {
-    let mut current_module_stats: ModuleStats = HashMap::new();
-
-    for module in modules {
-        current_module_stats.count_module(module.plugin, module.model);
-    }
+use std::collections::HashMap;
 
     for (_key, module) in current_module_stats {
         module_stats.count_module(module.plugin, module.model);
