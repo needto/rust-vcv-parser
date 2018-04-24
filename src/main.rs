@@ -47,7 +47,8 @@ impl CountModule for ModuleStats{
 #[derive(Serialize, Deserialize, Debug)]
 struct VcvPatchModule {
   plugin: String,
-  version: String,
+  #[serde(default)]
+  version: Option<String>,
   model: String
 }
 
