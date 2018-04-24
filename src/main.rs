@@ -5,6 +5,8 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 extern crate threadpool;
+extern crate csv;
+use csv::Writer;
 
 mod patchstorage;
 use patchstorage::{get_patch_list, get_patch_contents};
@@ -34,6 +36,26 @@ fn print_statistics(statistics: &HashMap<String,ModuleStatistic>) {
     }
 
     table.printstd();
+}
+
+fn export_statistics(statistics: &HashMap<String,ModuleStatistic>) {
+    let mut statistics_vec: Vec<&ModuleStatistic> = Vec::new();
+
+    for (_key, value) in statistics {
+        statistics_vec.push(value);
+    }
+
+    statistics_vec.sort_by(|a,b| b.count.cmp(&a.count));
+
+    let path = "modules.csv";
+    let mut writer = Writer::from_file(path).unwrap();
+
+    writer.encode(("Plugin", "Model", "Count")).expect("CSV writer error");
+
+    for value in statistics_vec {
+        writer.encode((&value.plugin, &value.model, value.count)).expect("CSV writer error");
+    }
+    writer.flush().expect("Flush error");
 }
 
 fn main() {
@@ -68,4 +90,5 @@ fn main() {
         }
     }
     print_statistics(&module_stats);
+    export_statistics(&module_stats);
 }
